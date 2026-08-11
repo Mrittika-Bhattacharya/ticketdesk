@@ -1,9 +1,12 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
-class Ticket(BaseModel):
+class TicketCreate(BaseModel):
     title: str
     description: str
     priority: str = "medium"
     status: str = "open"
+
+
+class Ticket(TicketCreate):
+    id: int
