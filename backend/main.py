@@ -88,3 +88,19 @@ def update_ticket(ticket_id: int, updated_ticket: TicketUpdate):
     return {
         "message": "Ticket not found"
     }
+
+
+@app.delete("/tickets/{ticket_id}")
+def delete_ticket(ticket_id: int):
+    for ticket in tickets:
+        if ticket.id == ticket_id:
+            tickets.remove(ticket)
+
+            return {
+                "message": "Ticket deleted successfully"
+            }
+
+    return {
+        "message": "Ticket not found"
+    }
+
