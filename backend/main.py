@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from models import Ticket, TicketCreate
+from models import Ticket, TicketCreate, TicketUpdate
 
 
 app = FastAPI(
@@ -65,6 +65,25 @@ def get_ticket(ticket_id: int):
     for ticket in tickets:
         if ticket.id == ticket_id:
             return ticket
+
+    return {
+        "message": "Ticket not found"
+    }
+
+
+@app.put("/tickets/{ticket_id}")
+def update_ticket(ticket_id: int, updated_ticket: TicketUpdate):
+    for ticket in tickets:
+        if ticket.id == ticket_id:
+            ticket.title = updated_ticket.title
+            ticket.description = updated_ticket.description
+            ticket.priority = updated_ticket.priority
+            ticket.status = updated_ticket.status
+
+            return {
+                "message": "Ticket updated successfully",
+                "ticket": ticket
+            }
 
     return {
         "message": "Ticket not found"

@@ -8,5 +8,12 @@ class TicketCreate(BaseModel):
     status: str = "open"
 
 
+class TicketUpdate(BaseModel):
+    title: str
+    description: str
+    priority: str
+    status: str
+
+
 class Ticket(TicketCreate):
     id: int
