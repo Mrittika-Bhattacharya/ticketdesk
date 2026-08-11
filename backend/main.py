@@ -58,3 +58,14 @@ def get_tickets():
     return {
         "tickets": tickets
     }
+
+
+@app.get("/tickets/{ticket_id}")
+def get_ticket(ticket_id: int):
+    for ticket in tickets:
+        if ticket.id == ticket_id:
+            return ticket
+
+    return {
+        "message": "Ticket not found"
+    }
