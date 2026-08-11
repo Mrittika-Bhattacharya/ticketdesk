@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from models import Ticket, TicketCreate, TicketUpdate
+from database import tickets, get_next_ticket_id
 
 
 app = FastAPI(
@@ -8,13 +9,6 @@ app = FastAPI(
     description="Backend API for the TicketDesk POC",
     version="1.0.0"
 )
-
-
-# Temporary in-memory storage
-tickets = []
-
-# Temporary ID generator
-next_ticket_id = 1
 
 
 @app.get("/")
@@ -33,10 +27,8 @@ def health():
 
 @app.post("/tickets")
 def create_ticket(ticket: TicketCreate):
-    global next_ticket_id
-
     new_ticket = Ticket(
-        id=next_ticket_id,
+        id=get_next_ticket_id(),
         title=ticket.title,
         description=ticket.description,
         priority=ticket.priority,
@@ -44,8 +36,6 @@ def create_ticket(ticket: TicketCreate):
     )
 
     tickets.append(new_ticket)
-
-    next_ticket_id += 1
 
     return {
         "message": "Ticket created successfully",
@@ -103,4 +93,3 @@ def delete_ticket(ticket_id: int):
     return {
         "message": "Ticket not found"
     }
-

@@ -17,3 +17,4 @@ class TicketUpdate(BaseModel):
 
 class Ticket(TicketCreate):
     id: int
+
