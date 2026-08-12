@@ -1,21 +1,30 @@
-# Temporary database layer
-#
-# For now, we are using a Python list as temporary storage.
-# Later, this file will be replaced/extended to connect
-# to the real PostgreSQL database.
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 
-tickets = []
+DATABASE_URL = (
+    "postgresql+psycopg2://ticketdesk:"
+    "ticketdesk_password@localhost:5432/ticketdesk"
+)
 
 
-next_ticket_id = 1
+engine = create_engine(DATABASE_URL)
 
 
-def get_next_ticket_id():
-    global next_ticket_id
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
-    ticket_id = next_ticket_id
-    next_ticket_id += 1
 
-    return ticket_id
+Base = declarative_base()
 
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()

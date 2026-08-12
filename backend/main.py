@@ -1,7 +1,11 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from sqlalchemy.orm import Session
 
-from models import Ticket, TicketCreate, TicketUpdate
-from database import tickets, get_next_ticket_id
+from database import Base, engine, get_db
+from models import TicketCreate, TicketDB, TicketUpdate
+
+
+Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(
@@ -26,16 +30,20 @@ def health():
 
 
 @app.post("/tickets")
-def create_ticket(ticket: TicketCreate):
-    new_ticket = Ticket(
-        id=get_next_ticket_id(),
+def create_ticket(
+    ticket: TicketCreate,
+    db: Session = Depends(get_db)
+):
+    new_ticket = TicketDB(
         title=ticket.title,
         description=ticket.description,
         priority=ticket.priority,
         status=ticket.status
     )
 
-    tickets.append(new_ticket)
+    db.add(new_ticket)
+    db.commit()
+    db.refresh(new_ticket)
 
     return {
         "message": "Ticket created successfully",
@@ -44,52 +52,85 @@ def create_ticket(ticket: TicketCreate):
 
 
 @app.get("/tickets")
-def get_tickets():
+def get_tickets(
+    db: Session = Depends(get_db)
+):
+    tickets = db.query(TicketDB).all()
+
     return {
         "tickets": tickets
     }
 
 
 @app.get("/tickets/{ticket_id}")
-def get_ticket(ticket_id: int):
-    for ticket in tickets:
-        if ticket.id == ticket_id:
-            return ticket
+def get_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db)
+):
+    ticket = (
+        db.query(TicketDB)
+        .filter(TicketDB.id == ticket_id)
+        .first()
+    )
 
-    return {
-        "message": "Ticket not found"
-    }
+    if ticket is None:
+        return {
+            "message": "Ticket not found"
+        }
+
+    return ticket
 
 
 @app.put("/tickets/{ticket_id}")
-def update_ticket(ticket_id: int, updated_ticket: TicketUpdate):
-    for ticket in tickets:
-        if ticket.id == ticket_id:
-            ticket.title = updated_ticket.title
-            ticket.description = updated_ticket.description
-            ticket.priority = updated_ticket.priority
-            ticket.status = updated_ticket.status
+def update_ticket(
+    ticket_id: int,
+    updated_ticket: TicketUpdate,
+    db: Session = Depends(get_db)
+):
+    ticket = (
+        db.query(TicketDB)
+        .filter(TicketDB.id == ticket_id)
+        .first()
+    )
 
-            return {
-                "message": "Ticket updated successfully",
-                "ticket": ticket
-            }
+    if ticket is None:
+        return {
+            "message": "Ticket not found"
+        }
+
+    ticket.title = updated_ticket.title
+    ticket.description = updated_ticket.description
+    ticket.priority = updated_ticket.priority
+    ticket.status = updated_ticket.status
+
+    db.commit()
+    db.refresh(ticket)
 
     return {
-        "message": "Ticket not found"
+        "message": "Ticket updated successfully",
+        "ticket": ticket
     }
 
 
 @app.delete("/tickets/{ticket_id}")
-def delete_ticket(ticket_id: int):
-    for ticket in tickets:
-        if ticket.id == ticket_id:
-            tickets.remove(ticket)
+def delete_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db)
+):
+    ticket = (
+        db.query(TicketDB)
+        .filter(TicketDB.id == ticket_id)
+        .first()
+    )
 
-            return {
-                "message": "Ticket deleted successfully"
-            }
+    if ticket is None:
+        return {
+            "message": "Ticket not found"
+        }
+
+    db.delete(ticket)
+    db.commit()
 
     return {
-        "message": "Ticket not found"
+        "message": "Ticket deleted successfully"
     }
