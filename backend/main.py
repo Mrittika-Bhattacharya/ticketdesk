@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
@@ -29,7 +29,7 @@ def health():
     }
 
 
-@app.post("/tickets")
+@app.post("/tickets", status_code=201)
 def create_ticket(
     ticket: TicketCreate,
     db: Session = Depends(get_db)
@@ -47,7 +47,13 @@ def create_ticket(
 
     return {
         "message": "Ticket created successfully",
-        "ticket": new_ticket
+        "ticket": {
+            "id": new_ticket.id,
+            "title": new_ticket.title,
+            "description": new_ticket.description,
+            "priority": new_ticket.priority,
+            "status": new_ticket.status
+        }
     }
 
 
@@ -58,7 +64,16 @@ def get_tickets(
     tickets = db.query(TicketDB).all()
 
     return {
-        "tickets": tickets
+        "tickets": [
+            {
+                "id": ticket.id,
+                "title": ticket.title,
+                "description": ticket.description,
+                "priority": ticket.priority,
+                "status": ticket.status
+            }
+            for ticket in tickets
+        ]
     }
 
 
@@ -67,18 +82,21 @@ def get_ticket(
     ticket_id: int,
     db: Session = Depends(get_db)
 ):
-    ticket = (
-        db.query(TicketDB)
-        .filter(TicketDB.id == ticket_id)
-        .first()
-    )
+    ticket = db.get(TicketDB, ticket_id)
 
     if ticket is None:
-        return {
-            "message": "Ticket not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found"
+        )
 
-    return ticket
+    return {
+        "id": ticket.id,
+        "title": ticket.title,
+        "description": ticket.description,
+        "priority": ticket.priority,
+        "status": ticket.status
+    }
 
 
 @app.put("/tickets/{ticket_id}")
@@ -87,16 +105,13 @@ def update_ticket(
     updated_ticket: TicketUpdate,
     db: Session = Depends(get_db)
 ):
-    ticket = (
-        db.query(TicketDB)
-        .filter(TicketDB.id == ticket_id)
-        .first()
-    )
+    ticket = db.get(TicketDB, ticket_id)
 
     if ticket is None:
-        return {
-            "message": "Ticket not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found"
+        )
 
     ticket.title = updated_ticket.title
     ticket.description = updated_ticket.description
@@ -108,7 +123,13 @@ def update_ticket(
 
     return {
         "message": "Ticket updated successfully",
-        "ticket": ticket
+        "ticket": {
+            "id": ticket.id,
+            "title": ticket.title,
+            "description": ticket.description,
+            "priority": ticket.priority,
+            "status": ticket.status
+        }
     }
 
 
@@ -117,16 +138,13 @@ def delete_ticket(
     ticket_id: int,
     db: Session = Depends(get_db)
 ):
-    ticket = (
-        db.query(TicketDB)
-        .filter(TicketDB.id == ticket_id)
-        .first()
-    )
+    ticket = db.get(TicketDB, ticket_id)
 
     if ticket is None:
-        return {
-            "message": "Ticket not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Ticket not found"
+        )
 
     db.delete(ticket)
     db.commit()

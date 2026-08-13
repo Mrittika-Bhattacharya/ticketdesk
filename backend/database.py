@@ -1,11 +1,17 @@
+import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 
-DATABASE_URL = (
-    "postgresql+psycopg2://ticketdesk:"
-    "ticketdesk_password@localhost:5432/ticketdesk"
-)
+load_dotenv()
+
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not configured")
 
 
 engine = create_engine(DATABASE_URL)

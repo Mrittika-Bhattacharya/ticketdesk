@@ -1,5 +1,7 @@
+from sqlalchemy import Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+
 from pydantic import BaseModel
-from sqlalchemy import Column, Integer, String
 
 from database import Base
 
@@ -7,11 +9,31 @@ from database import Base
 class TicketDB(Base):
     __tablename__ = "tickets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    priority = Column(String, nullable=False, default="medium")
-    status = Column(String, nullable=False, default="open")
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    title: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False
+    )
+
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
+
+    priority: Mapped[str] = mapped_column(
+        String(20),
+        default="medium"
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="open"
+    )
 
 
 class TicketCreate(BaseModel):
@@ -26,15 +48,3 @@ class TicketUpdate(BaseModel):
     description: str
     priority: str
     status: str
-
-
-class TicketResponse(BaseModel):
-    id: int
-    title: str
-    description: str
-    priority: str
-    status: str
-
-    model_config = {
-        "from_attributes": True
-    }
