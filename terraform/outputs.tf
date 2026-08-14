@@ -61,3 +61,17 @@ output "health_url" {
   description = "TicketDesk health-check URL"
   value       = "http://${aws_lb.main.dns_name}/health"
 }
+output "rds_endpoint" {
+  description = "RDS PostgreSQL endpoint"
+  value       = aws_db_instance.postgres.address
+}
+
+output "rds_port" {
+  description = "RDS PostgreSQL port"
+  value       = aws_db_instance.postgres.port
+}
+
+output "rds_master_secret_arn" {
+  description = "Secrets Manager ARN for the RDS master credential"
+  value       = aws_db_instance.postgres.master_user_secret[0].secret_arn
+}

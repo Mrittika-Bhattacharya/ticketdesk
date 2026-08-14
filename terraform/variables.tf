@@ -56,3 +56,20 @@ variable "container_image" {
   type        = string
   default     = "243112136699.dkr.ecr.ap-southeast-2.amazonaws.com/ticketdesk:d2d1f06"
 }
+variable "db_name" {
+  description = "PostgreSQL database name"
+  type        = string
+  default     = "ticketdesk"
+}
+
+variable "db_username" {
+  description = "PostgreSQL master username"
+  type        = string
+  default     = "ticketdesk"
+}
+
+variable "db_instance_class" {
+  description = "RDS PostgreSQL instance class"
+  type        = string
+  default     = "db.t4g.micro"
+}

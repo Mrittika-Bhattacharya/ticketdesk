@@ -48,6 +48,31 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
 }
 
 
+resource "aws_iam_role_policy" "ecs_secrets" {
+  name = "${var.project_name}-tf-ecs-secrets"
+
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+
+        Resource = [
+          aws_db_instance.postgres.master_user_secret[0].secret_arn
+        ]
+      }
+    ]
+  })
+}
+
+
 resource "aws_ecs_task_definition" "main" {
   family                   = "${var.project_name}-tf-task"
   requires_compatibilities = ["FARGATE"]
@@ -59,49 +84,6 @@ resource "aws_ecs_task_definition" "main" {
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
 
   container_definitions = jsonencode([
-    {
-      name      = "postgres"
-      image     = "postgres:17"
-      essential = true
-
-      environment = [
-        {
-          name  = "POSTGRES_USER"
-          value = "ticketdesk"
-        },
-        {
-          name  = "POSTGRES_PASSWORD"
-          value = "ticketdesk_password"
-        },
-        {
-          name  = "POSTGRES_DB"
-          value = "ticketdesk"
-        }
-      ]
-
-      healthCheck = {
-        command = [
-          "CMD-SHELL",
-          "pg_isready -U ticketdesk -d ticketdesk"
-        ]
-
-        interval    = 10
-        timeout     = 5
-        retries     = 5
-        startPeriod = 10
-      }
-
-      logConfiguration = {
-        logDriver = "awslogs"
-
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "postgres"
-        }
-      }
-    },
-
     {
       name      = "ticketdesk-api"
       image     = var.container_image
@@ -117,15 +99,27 @@ resource "aws_ecs_task_definition" "main" {
 
       environment = [
         {
-          name  = "DATABASE_URL"
-          value = "postgresql+psycopg2://ticketdesk:ticketdesk_password@localhost:5432/ticketdesk"
+          name  = "DB_HOST"
+          value = aws_db_instance.postgres.address
+        },
+        {
+          name  = "DB_PORT"
+          value = tostring(aws_db_instance.postgres.port)
+        },
+        {
+          name  = "DB_NAME"
+          value = var.db_name
+        },
+        {
+          name  = "DB_USER"
+          value = var.db_username
         }
       ]
 
-      dependsOn = [
+      secrets = [
         {
-          containerName = "postgres"
-          condition     = "HEALTHY"
+          name      = "DB_PASSWORD"
+          valueFrom = "${aws_db_instance.postgres.master_user_secret[0].secret_arn}:password::"
         }
       ]
 
@@ -176,7 +170,9 @@ resource "aws_ecs_service" "main" {
 
   depends_on = [
     aws_lb_listener.http,
-    aws_nat_gateway.main
+    aws_nat_gateway.main,
+    aws_db_instance.postgres,
+    aws_iam_role_policy.ecs_secrets
   ]
 
   tags = {
