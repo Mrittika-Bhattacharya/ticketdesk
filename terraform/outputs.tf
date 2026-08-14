@@ -1,0 +1,63 @@
+output "vpc_id" {
+  description = "Terraform TicketDesk VPC ID"
+  value       = aws_vpc.main.id
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs"
+  value = [
+    aws_subnet.public_1.id,
+    aws_subnet.public_2.id
+  ]
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value = [
+    aws_subnet.private_1.id,
+    aws_subnet.private_2.id
+  ]
+}
+
+output "nat_gateway_id" {
+  description = "NAT Gateway ID"
+  value       = aws_nat_gateway.main.id
+}
+
+output "alb_security_group_id" {
+  description = "ALB security group ID"
+  value       = aws_security_group.alb.id
+}
+
+output "ecs_security_group_id" {
+  description = "ECS security group ID"
+  value       = aws_security_group.ecs.id
+}
+output "alb_dns_name" {
+  description = "Application Load Balancer DNS name"
+  value       = aws_lb.main.dns_name
+}
+
+output "target_group_arn" {
+  description = "Target group ARN"
+  value       = aws_lb_target_group.api.arn
+}
+output "ecs_cluster_name" {
+  description = "ECS cluster name"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "ecs_service_name" {
+  description = "ECS service name"
+  value       = aws_ecs_service.main.name
+}
+
+output "swagger_url" {
+  description = "TicketDesk Swagger URL"
+  value       = "http://${aws_lb.main.dns_name}/docs"
+}
+
+output "health_url" {
+  description = "TicketDesk health-check URL"
+  value       = "http://${aws_lb.main.dns_name}/health"
+}
