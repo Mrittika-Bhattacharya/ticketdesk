@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -10,6 +10,9 @@ app = FastAPI(
     description="Backend API for the TicketDesk POC",
     version="1.0.0"
 )
+
+
+api = APIRouter(prefix="/api")
 
 
 @app.get("/")
@@ -26,7 +29,14 @@ def health():
     }
 
 
-@app.post("/tickets", status_code=201)
+@api.get("/health")
+def api_health():
+    return {
+        "status": "healthy"
+    }
+
+
+@api.post("/tickets", status_code=201)
 def create_ticket(
     ticket: TicketCreate,
     db: Session = Depends(get_db)
@@ -54,7 +64,7 @@ def create_ticket(
     }
 
 
-@app.get("/tickets")
+@api.get("/tickets")
 def get_tickets(
     db: Session = Depends(get_db)
 ):
@@ -74,7 +84,7 @@ def get_tickets(
     }
 
 
-@app.get("/tickets/{ticket_id}")
+@api.get("/tickets/{ticket_id}")
 def get_ticket(
     ticket_id: int,
     db: Session = Depends(get_db)
@@ -96,7 +106,7 @@ def get_ticket(
     }
 
 
-@app.put("/tickets/{ticket_id}")
+@api.put("/tickets/{ticket_id}")
 def update_ticket(
     ticket_id: int,
     updated_ticket: TicketUpdate,
@@ -130,7 +140,7 @@ def update_ticket(
     }
 
 
-@app.delete("/tickets/{ticket_id}")
+@api.delete("/tickets/{ticket_id}")
 def delete_ticket(
     ticket_id: int,
     db: Session = Depends(get_db)
@@ -149,3 +159,6 @@ def delete_ticket(
     return {
         "message": "Ticket deleted successfully"
     }
+
+
+app.include_router(api)

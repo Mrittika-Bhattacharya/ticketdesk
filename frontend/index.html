@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>TicketDesk</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <main class="container">
+    <h1>TicketDesk</h1>
+
+    <p class="subtitle">
+      IT support ticket tracker
+    </p>
+
+    <section class="card">
+      <h2>Create Ticket</h2>
+
+      <form id="ticket-form">
+        <label for="title">Title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          required
+        >
+
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          required
+        ></textarea>
+
+        <label for="priority">Priority</label>
+        <select id="priority" name="priority">
+          <option value="LOW">LOW</option>
+          <option value="MEDIUM" selected>MEDIUM</option>
+          <option value="HIGH">HIGH</option>
+        </select>
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="OPEN" selected>OPEN</option>
+          <option value="IN_PROGRESS">IN_PROGRESS</option>
+          <option value="RESOLVED">RESOLVED</option>
+          <option value="CLOSED">CLOSED</option>
+        </select>
+
+        <button type="submit">
+          Create Ticket
+        </button>
+      </form>
+
+      <p id="form-message"></p>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Tickets</h2>
+
+        <button id="refresh-button" type="button">
+          Refresh
+        </button>
+      </div>
+
+      <div id="tickets">
+        Loading...
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

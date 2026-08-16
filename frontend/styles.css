@@ -1,0 +1,84 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  color: #222;
+}
+
+.container {
+  width: min(900px, 92%);
+  margin: 40px auto;
+}
+
+h1 {
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  margin-top: 0;
+  color: #666;
+}
+
+.card {
+  background: white;
+  padding: 24px;
+  margin-top: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+button {
+  width: fit-content;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ticket {
+  border-top: 1px solid #ddd;
+  padding: 16px 0;
+}
+
+.ticket:first-child {
+  border-top: 0;
+}
+
+.error {
+  color: #b00020;
+}
+
+#form-message {
+  margin-bottom: 0;
+}
