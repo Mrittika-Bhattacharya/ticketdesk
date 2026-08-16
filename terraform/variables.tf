@@ -54,7 +54,7 @@ variable "availability_zone_2" {
 variable "container_image" {
   description = "ECR image used by the TicketDesk API"
   type        = string
-  default     = "243112136699.dkr.ecr.ap-southeast-2.amazonaws.com/ticketdesk:067d072"
+  default     = "243112136699.dkr.ecr.ap-southeast-2.amazonaws.com/ticketdesk:9eefc19"
 }
 variable "db_name" {
   description = "PostgreSQL database name"
