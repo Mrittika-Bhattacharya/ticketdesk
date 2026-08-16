@@ -61,11 +61,16 @@ resource "aws_iam_role_policy" "ecs_secrets" {
         Effect = "Allow"
 
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "ssm:GetParameters"
         ]
 
         Resource = [
-          aws_db_instance.postgres.master_user_secret[0].secret_arn
+          aws_db_instance.postgres.master_user_secret[0].secret_arn,
+          aws_ssm_parameter.db_host.arn,
+          aws_ssm_parameter.db_port.arn,
+          aws_ssm_parameter.db_name.arn,
+          aws_ssm_parameter.db_user.arn
         ]
       }
     ]
@@ -97,26 +102,23 @@ resource "aws_ecs_task_definition" "main" {
         }
       ]
 
-      environment = [
-        {
-          name  = "DB_HOST"
-          value = aws_db_instance.postgres.address
-        },
-        {
-          name  = "DB_PORT"
-          value = tostring(aws_db_instance.postgres.port)
-        },
-        {
-          name  = "DB_NAME"
-          value = var.db_name
-        },
-        {
-          name  = "DB_USER"
-          value = var.db_username
-        }
-      ]
-
       secrets = [
+        {
+          name      = "DB_HOST"
+          valueFrom = aws_ssm_parameter.db_host.arn
+        },
+        {
+          name      = "DB_PORT"
+          valueFrom = aws_ssm_parameter.db_port.arn
+        },
+        {
+          name      = "DB_NAME"
+          valueFrom = aws_ssm_parameter.db_name.arn
+        },
+        {
+          name      = "DB_USER"
+          valueFrom = aws_ssm_parameter.db_user.arn
+        },
         {
           name      = "DB_PASSWORD"
           valueFrom = "${aws_db_instance.postgres.master_user_secret[0].secret_arn}:password::"
@@ -172,6 +174,10 @@ resource "aws_ecs_service" "main" {
     aws_lb_listener.http,
     aws_nat_gateway.main,
     aws_db_instance.postgres,
+    aws_ssm_parameter.db_host,
+    aws_ssm_parameter.db_port,
+    aws_ssm_parameter.db_name,
+    aws_ssm_parameter.db_user,
     aws_iam_role_policy.ecs_secrets
   ]
 
