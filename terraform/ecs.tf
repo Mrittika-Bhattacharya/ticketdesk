@@ -95,6 +95,12 @@ resource "aws_ecs_task_definition" "main" {
       image     = var.container_image
       essential = true
 
+      environment = [
+        {
+          name  = "ATTACHMENTS_BUCKET"
+          value = aws_s3_bucket.attachments.bucket
+        }
+      ]
       portMappings = [
         {
           containerPort = 8000

@@ -5,6 +5,27 @@ const ticketsContainer = document.getElementById("tickets");
 const refreshButton = document.getElementById("refresh-button");
 const formMessage = document.getElementById("form-message");
 
+function getAttachmentInput() {
+  return document.getElementById("attachment");
+}
+
+function ensureAttachmentInput() {
+  if (getAttachmentInput()) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "form-group";
+  wrapper.innerHTML = `
+    <label for="attachment">Screenshot (optional)</label>
+    <input id="attachment" name="attachment" type="file" accept="image/*">
+  `;
+
+  const submit = ticketForm.querySelector('button[type="submit"]');
+  if (submit) {
+    ticketForm.insertBefore(wrapper, submit);
+  } else {
+    ticketForm.appendChild(wrapper);
+  }
+}
 
 async function loadTickets() {
   ticketsContainer.textContent = "Loading...";
@@ -48,11 +69,67 @@ async function loadTickets() {
   }
 }
 
+async function uploadAttachment(ticketId, file) {
+  const query = new URLSearchParams({
+    filename: file.name,
+    content_type: file.type
+  });
+
+  const urlResponse = await fetch(
+    `${API_BASE}/tickets/${ticketId}/attachments/presigned-url?${query}`,
+    { method: "POST" }
+  );
+
+  const urlData = await urlResponse.json();
+
+  if (!urlResponse.ok) {
+    throw new Error(
+      urlData.detail || `Failed to get upload URL: ${urlResponse.status}`
+    );
+  }
+
+  const uploadResponse = await fetch(urlData.upload_url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type
+    },
+    body: file
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error(
+      `S3 upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`
+    );
+  }
+
+  return urlData.key;
+}
+
+async function waitForThumbnail(ticketId, filename, maxAttempts = 20) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const query = new URLSearchParams({ filename });
+
+    const response = await fetch(
+      `${API_BASE}/tickets/${ticketId}/attachments/thumbnail-url?${query}`
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.ready && data.thumbnail_url) {
+      return data.thumbnail_url;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+
+  throw new Error("Thumbnail was not ready within the expected time.");
+}
 
 async function createTicket(event) {
   event.preventDefault();
 
   formMessage.textContent = "";
+  formMessage.className = "";
 
   const formData = new FormData(ticketForm);
 
@@ -62,6 +139,8 @@ async function createTicket(event) {
     priority: formData.get("priority"),
     status: formData.get("status")
   };
+
+  const file = getAttachmentInput()?.files?.[0] || null;
 
   try {
     const response = await fetch(`${API_BASE}/tickets`, {
@@ -75,13 +154,32 @@ async function createTicket(event) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail || `Failed to create ticket: ${response.status}`);
+      throw new Error(
+        data.detail || `Failed to create ticket: ${response.status}`
+      );
     }
 
-    formMessage.textContent = data.message || "Ticket created successfully.";
+    const ticketId = data.ticket.id;
+
+    if (file) {
+      formMessage.textContent = "Ticket created. Uploading screenshot...";
+
+      await uploadAttachment(ticketId, file);
+
+      formMessage.textContent =
+        "Screenshot uploaded. Waiting for thumbnail...";
+
+      const thumbnailUrl = await waitForThumbnail(ticketId, file.name);
+
+      formMessage.innerHTML =
+        `Ticket created and thumbnail generated. ` +
+        `<a href="${thumbnailUrl}" target="_blank" rel="noopener">View thumbnail</a>`;
+    } else {
+      formMessage.textContent =
+        data.message || "Ticket created successfully.";
+    }
 
     ticketForm.reset();
-
     await loadTickets();
   } catch (error) {
     console.error(error);
@@ -90,16 +188,13 @@ async function createTicket(event) {
   }
 }
 
-
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value ?? "";
   return div.innerHTML;
 }
 
-
+ensureAttachmentInput();
 ticketForm.addEventListener("submit", createTicket);
-
 refreshButton.addEventListener("click", loadTickets);
-
 loadTickets();
