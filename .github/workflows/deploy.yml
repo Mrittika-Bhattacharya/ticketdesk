@@ -14,6 +14,13 @@ jobs:
     name: Build and Deploy TicketDesk
     runs-on: ubuntu-latest
 
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: test
+      DB_USER: test
+      DB_PASSWORD: test
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
