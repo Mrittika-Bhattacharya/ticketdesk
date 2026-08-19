@@ -1,7 +1,5 @@
-from database import Base, engine
-
-# Import models so SQLAlchemy knows which tables belong to Base.metadata.
-from models import TicketDB  # noqa: F401
+from backend.database import Base, engine
+from backend.models import TicketDB  # noqa: F401
 
 
 def run_migration():

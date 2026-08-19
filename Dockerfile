@@ -24,6 +24,4 @@ USER appuser
 
 EXPOSE 8000
 
-WORKDIR /app/backend
-
-CMD ["sh", "-c", "python migrate.py && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python -m backend.migrate && exec uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
