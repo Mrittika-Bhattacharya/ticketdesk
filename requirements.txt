@@ -4,3 +4,5 @@ sqlalchemy
 psycopg2-binary
 python-dotenv
 boto3
+pytest
+httpx2

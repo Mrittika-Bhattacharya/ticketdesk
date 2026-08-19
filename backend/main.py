@@ -6,8 +6,8 @@ from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import TicketCreate, TicketDB, TicketUpdate
+from backend.database import get_db
+from backend.models import TicketCreate, TicketDB, TicketUpdate
 
 
 app = FastAPI(

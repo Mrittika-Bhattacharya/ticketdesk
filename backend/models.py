@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from pydantic import BaseModel
 
-from database import Base
+from backend.database import Base
 
 
 class TicketDB(Base):
