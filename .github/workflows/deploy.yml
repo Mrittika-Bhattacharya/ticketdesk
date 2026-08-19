@@ -68,3 +68,19 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Render ECS task definition
+        id: render-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: .aws/task-definition.json
+          container-name: ticketdesk-api
+          image: ${{ steps.login-ecr.outputs.registry }}/ticketdesk:${{ github.sha }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
+          service: tkt-mrittika-tf-service
+          cluster: tkt-mrittika-tf-cluster
+          wait-for-service-stability: true
