@@ -1,4 +1,4 @@
-name: TicketDesk CI/CD
+name: TicketDesk CI/CD - OIDC
 
 on:
   push:
