@@ -61,7 +61,7 @@ output "swagger_url" {
 
 output "health_url" {
   description = "TicketDesk health-check URL"
-  value       = "http://${aws_lb.main.dns_name}/health"
+  value       = "http://${aws_lb.main.dns_name}/api/health"
 }
 
 output "rds_endpoint" {

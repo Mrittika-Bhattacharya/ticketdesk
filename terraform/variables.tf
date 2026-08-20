@@ -73,3 +73,10 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t4g.micro"
 }
+
+
+variable "alert_email" {
+  description = "Email address that receives TicketDesk CloudWatch alarm notifications"
+  type        = string
+}
+
