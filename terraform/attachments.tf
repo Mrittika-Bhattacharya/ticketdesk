@@ -28,10 +28,23 @@ resource "aws_s3_bucket_cors_configuration" "attachments" {
   bucket = aws_s3_bucket.attachments.id
 
   cors_rule {
-    allowed_methods = ["PUT"]
-    allowed_origins = ["*"]
+    allowed_methods = [
+      "GET",
+      "PUT",
+      "POST",
+      "HEAD"
+    ]
+
+    allowed_origins = [
+      "https://sqhbtzd66e.execute-api.ap-southeast-2.amazonaws.com"
+    ]
+
     allowed_headers = ["*"]
-    expose_headers  = ["ETag"]
+
+    expose_headers = [
+      "ETag"
+    ]
+
     max_age_seconds = 3000
   }
 }

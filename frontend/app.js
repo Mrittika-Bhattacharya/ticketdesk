@@ -4,28 +4,18 @@ const ticketForm = document.getElementById("ticket-form");
 const ticketsContainer = document.getElementById("tickets");
 const refreshButton = document.getElementById("refresh-button");
 const formMessage = document.getElementById("form-message");
+const attachmentInput = document.getElementById("attachment");
 
-function getAttachmentInput() {
-  return document.getElementById("attachment");
-}
-
-function ensureAttachmentInput() {
-  if (getAttachmentInput()) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "form-group";
-  wrapper.innerHTML = `
-    <label for="attachment">Screenshot (optional)</label>
-    <input id="attachment" name="attachment" type="file" accept="image/*">
-  `;
-
-  const submit = ticketForm.querySelector('button[type="submit"]');
-  if (submit) {
-    ticketForm.insertBefore(wrapper, submit);
-  } else {
-    ticketForm.appendChild(wrapper);
-  }
-}
+/*
+ * Stores attachment filenames for tickets created during
+ * the current browser session.
+ *
+ * Example:
+ * {
+ *   13: "screenshot.png"
+ * }
+ */
+const ticketAttachments = new Map();
 
 async function loadTickets() {
   ticketsContainer.textContent = "Loading...";
@@ -46,7 +36,7 @@ async function loadTickets() {
 
     ticketsContainer.innerHTML = "";
 
-    data.tickets.forEach((ticket) => {
+    for (const ticket of data.tickets) {
       const ticketElement = document.createElement("article");
       ticketElement.className = "ticket";
 
@@ -60,10 +50,44 @@ async function loadTickets() {
         </p>
       `;
 
+      const attachmentFilename = ticketAttachments.get(ticket.id);
+
+      if (attachmentFilename) {
+        try {
+          const thumbnailUrl = await getThumbnailUrl(
+            ticket.id,
+            attachmentFilename
+          );
+
+          if (thumbnailUrl) {
+            const attachmentSection = document.createElement("div");
+            attachmentSection.className = "ticket-attachment";
+
+            attachmentSection.innerHTML = `
+              <strong>Attachment:</strong>
+              <br>
+              <img
+                src="${thumbnailUrl}"
+                alt="Attachment thumbnail for ${escapeHtml(ticket.title)}"
+                class="thumbnail"
+              >
+            `;
+
+            ticketElement.appendChild(attachmentSection);
+          }
+        } catch (error) {
+          console.error(
+            `Unable to load thumbnail for ticket ${ticket.id}`,
+            error
+          );
+        }
+      }
+
       ticketsContainer.appendChild(ticketElement);
-    });
+    }
   } catch (error) {
     console.error(error);
+
     ticketsContainer.innerHTML =
       '<p class="error">Unable to load tickets.</p>';
   }
@@ -77,14 +101,17 @@ async function uploadAttachment(ticketId, file) {
 
   const urlResponse = await fetch(
     `${API_BASE}/tickets/${ticketId}/attachments/presigned-url?${query}`,
-    { method: "POST" }
+    {
+      method: "POST"
+    }
   );
 
   const urlData = await urlResponse.json();
 
   if (!urlResponse.ok) {
     throw new Error(
-      urlData.detail || `Failed to get upload URL: ${urlResponse.status}`
+      urlData.detail ||
+      `Failed to get upload URL: ${urlResponse.status}`
     );
   }
 
@@ -105,24 +132,51 @@ async function uploadAttachment(ticketId, file) {
   return urlData.key;
 }
 
-async function waitForThumbnail(ticketId, filename, maxAttempts = 20) {
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const query = new URLSearchParams({ filename });
+async function getThumbnailUrl(ticketId, filename) {
+  const query = new URLSearchParams({
+    filename
+  });
 
-    const response = await fetch(
-      `${API_BASE}/tickets/${ticketId}/attachments/thumbnail-url?${query}`
-    );
+  const response = await fetch(
+    `${API_BASE}/tickets/${ticketId}/attachments/thumbnail-url?${query}`
+  );
 
-    const data = await response.json();
+  const data = await response.json();
 
-    if (response.ok && data.ready && data.thumbnail_url) {
-      return data.thumbnail_url;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  if (response.ok && data.ready && data.thumbnail_url) {
+    return data.thumbnail_url;
   }
 
-  throw new Error("Thumbnail was not ready within the expected time.");
+  return null;
+}
+
+async function waitForThumbnail(
+  ticketId,
+  filename,
+  maxAttempts = 20
+) {
+  for (
+    let attempt = 0;
+    attempt < maxAttempts;
+    attempt += 1
+  ) {
+    const thumbnailUrl = await getThumbnailUrl(
+      ticketId,
+      filename
+    );
+
+    if (thumbnailUrl) {
+      return thumbnailUrl;
+    }
+
+    await new Promise(
+      (resolve) => setTimeout(resolve, 1500)
+    );
+  }
+
+  throw new Error(
+    "Thumbnail was not ready within the expected time."
+  );
 }
 
 async function createTicket(event) {
@@ -140,7 +194,7 @@ async function createTicket(event) {
     status: formData.get("status")
   };
 
-  const file = getAttachmentInput()?.files?.[0] || null;
+  const file = attachmentInput.files[0] || null;
 
   try {
     const response = await fetch(`${API_BASE}/tickets`, {
@@ -155,34 +209,50 @@ async function createTicket(event) {
 
     if (!response.ok) {
       throw new Error(
-        data.detail || `Failed to create ticket: ${response.status}`
+        data.detail ||
+        `Failed to create ticket: ${response.status}`
       );
     }
 
     const ticketId = data.ticket.id;
 
     if (file) {
-      formMessage.textContent = "Ticket created. Uploading screenshot...";
+      formMessage.textContent =
+        "Ticket created. Uploading screenshot...";
 
       await uploadAttachment(ticketId, file);
 
+      ticketAttachments.set(ticketId, file.name);
+
       formMessage.textContent =
-        "Screenshot uploaded. Waiting for thumbnail...";
+        "Screenshot uploaded. Generating thumbnail...";
 
-      const thumbnailUrl = await waitForThumbnail(ticketId, file.name);
+      const thumbnailUrl = await waitForThumbnail(
+        ticketId,
+        file.name
+      );
 
-      formMessage.innerHTML =
-        `Ticket created and thumbnail generated. ` +
-        `<a href="${thumbnailUrl}" target="_blank" rel="noopener">View thumbnail</a>`;
+      formMessage.innerHTML = `
+        Ticket created successfully.
+        <br>
+        <img
+          src="${thumbnailUrl}"
+          alt="Generated attachment thumbnail"
+          class="thumbnail"
+        >
+      `;
     } else {
       formMessage.textContent =
-        data.message || "Ticket created successfully.";
+        data.message ||
+        "Ticket created successfully.";
     }
 
     ticketForm.reset();
+
     await loadTickets();
   } catch (error) {
     console.error(error);
+
     formMessage.textContent = error.message;
     formMessage.className = "error";
   }
@@ -190,11 +260,13 @@ async function createTicket(event) {
 
 function escapeHtml(value) {
   const div = document.createElement("div");
+
   div.textContent = value ?? "";
+
   return div.innerHTML;
 }
 
-ensureAttachmentInput();
 ticketForm.addEventListener("submit", createTicket);
 refreshButton.addEventListener("click", loadTickets);
+
 loadTickets();

@@ -1,6 +1,23 @@
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
 tfplan
 destroyplan
 crash.log
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Editor
+.vscode/
+
+# Terraform build artifacts
+terraform/*.zip
+
+# Temporary local test files
+test.png
+presigned.json

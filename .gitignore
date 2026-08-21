@@ -1,6 +1,21 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
 .env
+
+# Editor
 .vscode/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+destroyplan
+crash.log
 terraform/*.zip
+
+# Temporary local test files
+test.png
+presigned.json

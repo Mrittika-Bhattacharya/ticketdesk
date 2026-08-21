@@ -99,6 +99,10 @@ resource "aws_ecs_task_definition" "main" {
         {
           name  = "ATTACHMENTS_BUCKET"
           value = aws_s3_bucket.attachments.bucket
+        },
+        {
+          name  = "AWS_REGION"
+          value = var.aws_region
         }
       ]
       portMappings = [

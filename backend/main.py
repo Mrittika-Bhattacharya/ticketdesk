@@ -2,6 +2,7 @@ import os
 from pathlib import PurePosixPath
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
@@ -18,8 +19,20 @@ app = FastAPI(
 
 api = APIRouter(prefix="/api")
 
-s3_client = boto3.client("s3")
+AWS_REGION = os.environ.get("AWS_REGION", "ap-southeast-2")
+
 ATTACHMENTS_BUCKET = os.environ.get("ATTACHMENTS_BUCKET")
+
+s3_client = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    config=Config(
+        signature_version="s3v4",
+        s3={
+            "addressing_style": "virtual"
+        }
+    )
+)
 
 
 def attachment_filename(filename: str) -> str:
